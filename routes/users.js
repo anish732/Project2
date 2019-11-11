@@ -1,8 +1,11 @@
 var express = require('express');
 var router = express.Router();
 var bcrypt = require('bcryptjs');
-var db = require("../models");
+var passport = require('passport');
+var User = require('../models/example');
 
+
+//var db = require("../models");
 
 //Login Page
 router.get('/login',(req,res)=> res.render('login'));
@@ -38,7 +41,10 @@ router.post('/register',(req, res) => {
       })
     }else{
         //Validation passed
-        User.findOne ({ email: email})
+        User.findOne ({ 
+          where:{
+            email: req.body.email}
+          })
          .then(user => {
            if(user) {
              //User exists
@@ -56,15 +62,15 @@ router.post('/register',(req, res) => {
                email,
                password
              });
-             console.log(newUser);
-             res.send('hello');
              //Hash Password
              bcrypt.genSalt(10, (err, salt) => 
              bcrypt.hash(newUser.password,salt,(err, hash) =>{
                if(err) throw err;
+               //Set password to hashed
                newUser.password = hash;
                //Save user
-               newUser.save()
+               newUser
+               .save()
                .then(user => {
                  req.flash('success_msg', 'You are now registered and you can login');
                  res.redirect('/users/login');
@@ -73,16 +79,23 @@ router.post('/register',(req, res) => {
              }))
            }
          });
-
-
     }
-    
 });
 
 //login handle
-router.post('/login', (req, res) => {
-    console.log(req.body)
+router.post('/login', (req, res,next) => {
+  passport.authenticate('local', {
+    successRedirect: '/dashboard',
+    failureRedirect: '/users/login',
+    failureFlash: true
+  })(req, res, next);
+});
 
+//Logout
+router.get('/logout', (req, res) => {
+  req.logOut();
+  req.flash('success_msg', 'You are logged out');
+  res.redirect('/users/login');
 })
 
 module.exports = router;

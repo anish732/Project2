@@ -3,13 +3,15 @@ var expressLayouts = require('express-ejs-layouts');
 var mysql = require('mysql');
 var flash = require('connect-flash');
 var session = require('express-session');
-
+var passport = require('passport')
 var app = express();
-var db = require("./models");
+//var db = require("./models/data");
+
+//Passport config
+require('./config/middleware/passport')(passport);
 
 
-//
-//var db = require('./config/config')
+var db = require('./config/connection')
 //EJS
 app.use(expressLayouts);
 app.set('view engine', 'ejs');
@@ -23,6 +25,10 @@ app.use(session({
     saveUninitialized: true
 }));
 
+// Passport middleware
+app.use(passport.initialize());
+app.use(passport.session());
+
 // Connect flash
 app.use(flash());
 
@@ -30,6 +36,7 @@ app.use(flash());
 app.use((req, res, next) => {
    res.locals.success_msg = req.flash('success_msg');
    res.locals.error_msg = req.flash('err_msg');
+   res.locals.error = req.flash('err');
    next();
 })
 
